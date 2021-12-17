@@ -30,12 +30,4 @@ before_install:
 
 script:
 - docker-compose -f docker-compose.build.yml run pkgtools
-- docker-compose -f docker-compose.build.yml run build
-
-notifications:
-  email: false
-  slack:
-    rooms:
-      secure: r9fH3mBG95DE3kiaKs+O/1HzCt7bn0FgWrkzmS2jlsszSsp3E49KTfH/3O/BEXVqxY+JN6C+6YfJyH5OcdGu7dks+/AxRVCj6sK6vT5XgTZIBr1HXSkgmoqiZKk93pLKYZCJJ7vcslUXIlVPWmJc1lef+Ou4lR5Tx7p160YBm9I9NO+AuSZQByVGCU27+Vioac2AWytZPmP19TAGx1ymP/RnOSppfpon3bEvx1KiJXsftTrgR6B89PKygd04BLrWlqEDUwt/D+jxraXKhOtI9I7CNp8OIicAgvJMsIk31NsIhTRJgBH/+DAnCIUdo1v4x7uAvngisJJGuqMNP6L3IyOJTmZDh05bM6EhL02e7lND7RVYOedfN7Ru8mZs7TpoLePjeDCN/2zgyEIwRvDlMeDFwufm+q2xxa/uHUCUw/oSxTPlycvUGoL+kk8m1lCUW+Gltwux01nuP+MeUSOTPBNBMCay3qVFHQhgSEoo0tE2m7jBcbtFP6qskyXShsww0v9XGqtGp04ENS1GIpajEQqdo9HcJUQqw3bKwfIuWUlVoaCYXREEPB5cS7B1RlYhpqbNle7MZC9vBywXzZM4q7CrolhZ46MKiXmpAmnYRsgAlG+OUDv2bDCMumHlsYTqio87M6s1XMITHStRZWBhMFvk6TL9yuLDrGXgbDTFtUs=
-    on_success: change
-    on_failure: always
+- travis_wait docker-compose -f docker-compose.build.yml run build
