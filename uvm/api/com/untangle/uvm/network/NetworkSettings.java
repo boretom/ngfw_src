@@ -71,6 +71,7 @@ public class NetworkSettings implements Serializable, JSONString
     private DynamicRoutingSettings dynamicRoutingSettings;
 
     private String dnsmasqOptions;
+    private String radvdOptions;
 
     private String  publicUrlMethod;
     private String  publicUrlAddress;
@@ -191,6 +192,9 @@ public class NetworkSettings implements Serializable, JSONString
     
     public String getDnsmasqOptions() { return this.dnsmasqOptions; }
     public void setDnsmasqOptions( String newValue ) { this.dnsmasqOptions = newValue; }
+
+    public String getRadvdOptions() { return this.radvdOptions; }
+    public void setRadvdOptions( String newValue ) { this.radvdOptions = newValue; }
 
     public boolean getVlansEnabled() { return this.vlansEnabled; }
     public void setVlansEnabled( boolean newValue ) { this.vlansEnabled = newValue; }

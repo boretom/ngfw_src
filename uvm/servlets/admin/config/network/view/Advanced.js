@@ -730,6 +730,27 @@ Ext.define('Ung.config.network.view.Advanced', {
                 bind: '{settings.dnsmasqOptions}'
             }]
         }, {
+            title: 'RADVD'.t(),
+            itemId: 'radvd',
+            xtype: 'panel',
+            scrollable: true,
+            tbar: [{
+                xtype: 'tbtext',
+                padding: '8 5',
+                style: { fontSize: '12px' },
+                html: '<strong>' + 'Custom radvd options.'.t() + '</strong> <br/>' +
+                    '<i class="fa fa-exclamation-triangle" style="color: red;"></i> ' + 'Warning: Invalid syntax will halt radvd service.'.t()
+            }],
+            layout: 'fit',
+            items: [{
+                xtype: 'textarea',
+                margin: 10,
+                fieldStyle: {
+                    fontFamily: 'monospace'
+                },
+                bind: '{settings.radvdOptions}'
+            }]
+        }, {
             xtype: 'ungrid',
             itemId: 'network_cards',
             title: 'Network Cards'.t(),
