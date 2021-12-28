@@ -674,7 +674,6 @@ Ext.define('Ung.config.network.Interface', {
                     bind: {
                         hidden: '{!showRouterWarning}'
                     }
-
                 }]
             }, {
                 // ipv6 aliases
@@ -817,7 +816,7 @@ Ext.define('Ung.config.network.Interface', {
                 queryMode: 'local'
             }]
         }, {
-            title: 'DHCP Configuration'.t(),
+            title: 'DHCPv4 Configuration'.t(),
             tabConfig: {
                 hidden: true,
                 bind: {
@@ -966,6 +965,108 @@ Ext.define('Ung.config.network.Interface', {
                         allowBlank: false
                     }
                 }],
+            }]
+        }, {
+            bind: {
+                title: 'IPv6 RADVD Configuration'.t()
+            },
+            tabConfig: {
+                hidden: true,
+                bind: {
+                    hidden: '{intf.isWan || !isAddressed}'
+                }
+            },
+            tbar: [{
+                // ra enabled
+                xtype: 'checkbox',
+                itemId: 'raEnabled',
+                margin: 2,
+                bind: '{intf.raEnabled}',
+                boxLabel: '<strong>' + 'Send Router Advertisements'.t() + '</strong>'
+            }],
+            layout: {
+                type: 'vbox',
+                align: 'stretch'
+            },
+            items: [{
+                xtype: 'container',
+                flex: 1,
+                padding: 10,
+                scrollable: 'y',
+                layout: {
+                    type: 'vbox'
+                },
+                disabled: true,
+                bind: {
+                    disabled: '{!intf.raEnabled}'
+                },
+                defaults: {
+                    labelWidth: 190,
+                    width: 400,
+                    labelAlign: 'right',
+                    // anchor: '100%'
+                },
+                items: [{
+                    // TODO
+                    xtype: 'checkbox',
+                    itemId: 'raIgnoreIfMissing',
+                    bind: '{intf.raIgnoreIfMissing}',
+                    fieldLabel: 'IgnoreIfMissing'.t(),
+                    hidden: false
+                }, {
+                    xtype: 'combo',
+                    fieldLabel: 'Router Mode'.t(),
+                    emptyText: 'Unmanaged',
+                    bind: '{intf.raRouterMode}',
+                    editable: false,
+                    store: [
+                        ['RouterOnly', 'Router Only'],
+                        ['Unmanaged', 'Unmanaged'],
+                        ['Managed', 'Managed'],
+                        ['Assisted', 'Assisted'],
+                        ['StatelessDHCP', 'Stateless DHCP'],
+                    ],
+                    queryMode: 'local',
+                }, {
+                    // TODO
+                    xtype: 'checkbox',
+                    itemId: 'raAdvSendAdvert',
+                    bind: '{intf.raAdvSendAdvert}',
+                    fieldLabel: 'AdvSendAdvert'.t()
+                }, {
+                    xtype: 'numberfield',
+                    fieldLabel: 'RA Prefix Length'.t(),
+                    minValue: 1,
+                    maxValue: 128,
+                    allowDecimals: false,
+                    allowBlank: false,
+                    bind: {
+                        value: '{intf.raPrefixLength}',
+                        emptyText: '{intf.v6StaticPrefixLength}'
+                    },
+                    width: 260
+                }, {
+                    // TODO
+                    xtype: 'textfield',
+                    bind: {
+                        value: '{intf.raRDNSS}',
+                        emptyText: '{intf.v6StaticAddress}'
+                    },
+                    fieldLabel: 'Recursive DNS server'.t(),
+                    vtype: 'ip6Address'
+                }, {
+                    // TODO
+                    xtype: 'checkbox',
+                    itemId: 'raAdvManagedFlag',
+                    bind: '{intf.raAdvManagedFlag}',
+                    fieldLabel: 'AdvManagedFlag'.t()
+                }, {
+                    // TODO
+                    xtype: 'checkbox',
+                    itemId: 'raAdvOtherConfigFlag',
+                    bind: '{intf.raAdvConfigFlag}',
+                    fieldLabel: 'AdvOtherConfigFlag'.t()
+                }]
             }]
         }, {
             title: 'Redundancy (VRRP) Configuration'.t(),

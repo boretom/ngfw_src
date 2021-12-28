@@ -100,6 +100,10 @@ public class InterfaceSettings implements Serializable, JSONString
     private List<DhcpOption> dhcpOptions; /* DHCP dnsmasq options */
     
     private Boolean raEnabled; /* are IPv6 router advertisements available? */
+    private Integer raPrefixLength; /* TODO */
+    private InetAddress raPrefix; /* TODO */
+    private InetAddress raRDNSS; /* TODO */
+    private String raRouterMode; /* TODO */
     
     private Integer downloadBandwidthKbps; /* Download Bandwidth available on this WAN interface (for QoS) */
     private Integer uploadBandwidthKbps; /* Upload Bandwidth available on this WAN interface (for QoS) */
@@ -287,6 +291,27 @@ public class InterfaceSettings implements Serializable, JSONString
     
     public Boolean getRaEnabled() { return this.raEnabled; }
     public void setRaEnabled( Boolean newValue ) { this.raEnabled = newValue; }
+
+    public Integer getRaPrefixLength() {
+        if ( this.raPrefixLength == null || this.raPrefixLength < 2 && this.v6StaticPrefixLength != null)
+            this.raPrefixLength = this.v6StaticPrefixLength;
+        return this.raPrefixLength;
+    }
+    public void setRaPrefixLength( Integer newValue ) { this.raPrefixLength = newValue; }
+
+    public InetAddress getRaPrefix() { return this.raPrefix; }
+    public void setRaPrefix( InetAddress newValue ) { this.raPrefix = newValue; }
+
+    public InetAddress getRaRDNSS() {
+        if (this.raRDNSS == null  && this.v6StaticAddress != null)
+            this.raRDNSS = this.v6StaticAddress;
+        return this.raRDNSS;
+     }
+    public void setRaRDNSS( InetAddress newValue ) { this.raRDNSS = newValue; }
+
+    public String getRaRouterMode() { return this.raRouterMode; }
+    public void setRaRouterMode( String newValue ) { this.raRouterMode = newValue; }
+
 
     public Integer getDownloadBandwidthKbps() { return this.downloadBandwidthKbps; }
     public void setDownloadBandwidthKbps( Integer newValue ) { this.downloadBandwidthKbps = newValue; }
