@@ -643,38 +643,6 @@ Ext.define('Ung.config.network.Interface', {
                     },
                     vtype: 'ip6Address'
                 }]
-
-            }, {
-                xtype: 'fieldset',
-                title: 'IPv6 Options'.t(),
-                margin: 10,
-                padding: '5 10 10 10',
-                hidden: true,
-                bind: {
-                    hidden: '{isDisabledv6 || isAutov6 || intf.isWan}'
-                },
-                layout: {
-                    type: 'hbox',
-                    align: 'middle'
-                },
-                items: [{
-                    xtype:'checkbox',
-                    bind: {
-                        value: '{intf.raEnabled}'
-                        // hidden: '{intf.isWan}'
-                    },
-                    boxLabel: 'Send Router Advertisements'.t()
-                }, { xtype: 'component', flex: 1 }, {
-                    xtype: 'label',
-                    style: {
-                        color: '#777'
-                    },
-                    html: '<i class="fa fa-exclamation-triangle fa-orange"></i> ' + 'Warning:'.t() + ' ' +  'SLAAC only works with /64 subnets.'.t(),
-                    hidden: true,
-                    bind: {
-                        hidden: '{!showRouterWarning}'
-                    }
-                }]
             }, {
                 // ipv6 aliases
                 title: 'IPv6 Aliases'.t(),
@@ -968,7 +936,7 @@ Ext.define('Ung.config.network.Interface', {
             }]
         }, {
             bind: {
-                title: 'IPv6 RADVD Configuration'.t()
+                title: 'RADVD Configuration'.t()
             },
             tabConfig: {
                 hidden: true,
@@ -1007,13 +975,6 @@ Ext.define('Ung.config.network.Interface', {
                     // anchor: '100%'
                 },
                 items: [{
-                    // TODO
-                    xtype: 'checkbox',
-                    itemId: 'raIgnoreIfMissing',
-                    bind: '{intf.raIgnoreIfMissing}',
-                    fieldLabel: 'IgnoreIfMissing'.t(),
-                    hidden: false
-                }, {
                     xtype: 'combo',
                     fieldLabel: 'Router Mode'.t(),
                     emptyText: 'Unmanaged',
@@ -1028,23 +989,20 @@ Ext.define('Ung.config.network.Interface', {
                     ],
                     queryMode: 'local',
                 }, {
-                    // TODO
-                    xtype: 'checkbox',
-                    itemId: 'raAdvSendAdvert',
-                    bind: '{intf.raAdvSendAdvert}',
-                    fieldLabel: 'AdvSendAdvert'.t()
-                }, {
-                    xtype: 'numberfield',
-                    fieldLabel: 'RA Prefix Length'.t(),
-                    minValue: 1,
-                    maxValue: 128,
-                    allowDecimals: false,
-                    allowBlank: false,
+                    xtype: 'combo',
+                    fieldLabel: 'Router Priority'.t(),
+                    emptyText: 'Medium',
                     bind: {
-                        value: '{intf.raPrefixLength}',
-                        emptyText: '{intf.v6StaticPrefixLength}'
+                        value: '{intf.raRouterPriority}',
                     },
-                    width: 260
+                    editable: false,
+                    store: [
+                        ['Low', 'Low'],
+                        ['Medium', 'Medium'],
+                        ['High', 'High'],
+                    ],
+                    autoSelectLast: true,
+                    queryMode: 'local'
                 }, {
                     // TODO
                     xtype: 'textfield',
@@ -1054,18 +1012,6 @@ Ext.define('Ung.config.network.Interface', {
                     },
                     fieldLabel: 'Recursive DNS server'.t(),
                     vtype: 'ip6Address'
-                }, {
-                    // TODO
-                    xtype: 'checkbox',
-                    itemId: 'raAdvManagedFlag',
-                    bind: '{intf.raAdvManagedFlag}',
-                    fieldLabel: 'AdvManagedFlag'.t()
-                }, {
-                    // TODO
-                    xtype: 'checkbox',
-                    itemId: 'raAdvOtherConfigFlag',
-                    bind: '{intf.raAdvConfigFlag}',
-                    fieldLabel: 'AdvOtherConfigFlag'.t()
                 }]
             }]
         }, {
