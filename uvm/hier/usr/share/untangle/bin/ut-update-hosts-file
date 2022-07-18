@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # This script reads all of the IP addresses from the interface status files
 # located in /var/lib/interface-status. The platform creates and removes status
@@ -46,7 +46,7 @@ outfile = open("/etc/hosts.untangle","w")
 outfile.write("## Auto Generated\n");
 outfile.write("## DO NOT EDIT. Changes will be overwritten.\n\n")
 
-for key, value in facelist.iteritems():
+for key, value in facelist.items():
     outfile.write(key)
     outfile.write('\t\t')
     outfile.write(value)

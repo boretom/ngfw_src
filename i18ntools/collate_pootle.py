@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Collect existing localization into single files by languages and perform
 error checking for non-matching strings for the the same key.
@@ -8,13 +8,14 @@ import getopt
 import os
 import sys
 import glob
+import importlib
 
 UNTANGLE_DIR = '%s/lib/python' % (os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, UNTANGLE_DIR)
 
 import i18n
 
-reload(sys)  
+importlib.reload(sys)  
 sys.setdefaultencoding('utf8')
 
 languages = i18n.Languages()
@@ -100,7 +101,7 @@ def main(argv):
     #
     # Save collated files
     #
-    for collated_po_file in collated_po_files.values():
+    for collated_po_file in list(collated_po_files.values()):
         if collated_po_file.language == "en":
             continue
         if collated_po_file.language == "test":

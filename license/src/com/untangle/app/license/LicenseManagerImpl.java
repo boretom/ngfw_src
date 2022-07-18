@@ -796,7 +796,7 @@ public class LicenseManagerImpl extends AppBase implements LicenseManager
             socket = new Socket();
             host = licenseUri.getHost() != null ? licenseUri.getHost(): "license.untangle.com";
             port = licenseUri.getPort() != -1 ? licenseUri.getPort() : 443;
-            socket.connect(new InetSocketAddress(host, port), 5000);
+            socket.connect(new InetSocketAddress(host, port), 30000);
         } catch (Exception e) {
             logger.error("Can't get to untangle license server");
             connected = false;
@@ -893,6 +893,7 @@ public class LicenseManagerImpl extends AppBase implements LicenseManager
         /**
          * Save the settings
          */
+        logger.debug("Running save settings\n");
         SettingsManager settingsManager = UvmContextFactory.context().settingsManager();
         try {
             settingsManager.save( System.getProperty("uvm.conf.dir") + "/licenses/licenses.js", newSettings );
@@ -944,6 +945,7 @@ public class LicenseManagerImpl extends AppBase implements LicenseManager
         logger.info("Reloading licenses..." );
 
         synchronized (LicenseManagerImpl.this) {
+            String oldSettingsString = this.settings.toJSONString(); // need old settings
             this.settings.getUserLicenseMessages().clear(); // clear messages out
             boolean connected = _testLicenseConnectivity();
             boolean downloadSucceeded = false;
@@ -978,9 +980,12 @@ public class LicenseManagerImpl extends AppBase implements LicenseManager
                     if (noMessage) {
                         UserLicenseMessage noLicenseConnection = new UserLicenseMessage(NO_LICENSE_SERVER_CONNECTION_MESSAGE,
                                                                         false,
-                                                                        UserLicenseMessage.UserLicenseMessageType.ALERT);
+                                                                        UserLicenseMessage.UserLicenseMessageType.ALERT,
+                                                                        false);
                         this.settings.getUserLicenseMessages().add(noLicenseConnection);
-                        _saveSettings(this.settings);
+                        if (!this.settings.toJSONString().equals(oldSettingsString)) {
+                            _saveSettings(this.settings);
+                        }
                     }
                 }
             } else {
@@ -989,7 +994,7 @@ public class LicenseManagerImpl extends AppBase implements LicenseManager
                 if (connected && !UvmContextFactory.context().isRegistered() && !this.isRestricted()) {
                     logger.error("No connection to command center, not downloading licenses");
 
-                    UserLicenseMessage noCCAccount = new UserLicenseMessage(NO_COMMAND_CENTER_ACCOUNT, false, UserLicenseMessage.UserLicenseMessageType.INFO);
+                    UserLicenseMessage noCCAccount = new UserLicenseMessage(NO_COMMAND_CENTER_ACCOUNT, false, UserLicenseMessage.UserLicenseMessageType.INFO, true);
                     this.settings.getUserLicenseMessages().add(noCCAccount);
                 } else {
                     // if the deferred flag is set move it back to the auto install flag
@@ -1001,7 +1006,9 @@ public class LicenseManagerImpl extends AppBase implements LicenseManager
                 }
 
                 _mapLicenses();
-                _saveSettings(this.settings);
+                if (!this.settings.toJSONString().equals(oldSettingsString)) {
+                    _saveSettings(this.settings);
+                }
             }
             _runAppManagerSync();
         }
@@ -1137,7 +1144,8 @@ public class LicenseManagerImpl extends AppBase implements LicenseManager
     {
         int numDevices = _getEstimatedNumDevices();
         String model = UvmContextFactory.context().getApplianceModel();
-        String uvmVersion = UvmContextFactory.context().version();
+        String uvmVersion = UvmContextFactory.context().getFullVersion();
+        String serialNumber = UvmContextFactory.context().getServerSerialNumber();
         if (model != null) {
             try {
                 model = URLEncoder.encode(model,"UTF-8");
@@ -1149,6 +1157,7 @@ public class LicenseManagerImpl extends AppBase implements LicenseManager
         return "uid=" + UvmContextFactory.context().getServerUID() +
             "&appliance=" + UvmContextFactory.context().isAppliance() +
             (model != null ? "&appliance-model=" + model : "") + 
+            (serialNumber != null ? "&serialNumber=" + serialNumber : "") + 
             "&numDevices=" + numDevices +
             "&version=" + uvmVersion;
     }

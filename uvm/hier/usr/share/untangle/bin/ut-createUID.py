@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # This file creates a UID 
 # and writes the uid file  (default: /usr/share/untangle/conf/uid)
@@ -30,7 +30,7 @@ class ArgumentParser(object):
             for opt in optlist:
                 handlers[opt[0]](opt[1])
             return args
-        except getopt.GetoptError, exc:
+        except getopt.GetoptError as exc:
             print(exc)
             printUsage()
             exit(1)
@@ -62,15 +62,26 @@ try:
         debian_distro='stretch'
     elif re.match(r'^10\.*',ver) != None:
         debian_distro='buster'
+    elif re.match(r'^11\.*',ver) != None:
+        debian_distro='bullseye'
     else:
         print("Unknown debian Version %s. Assuming \"%s\"" % (ver.strip(), debian_distro))
-except Exception,e:
+except Exception as e:
     traceback.print_exc()
     print("Unknown debian Version %s. Assuming \"%s\"" % (ver.strip(), debian_distro))
 
 # last two bytes in UID have special meaning 
-platforms = { 'sarge':'0', 'etch':'1', 'sid':'2', 'lenny':'7', 'squeeze':'8', 'wheezy':'9', 'jessie':'3', 'stretch':'4', 'buster':'5' }
-versions = { 'hardware':'1', 'iso':'2' }
+platforms = {'sarge': '0',
+             'etch': '1',
+             'sid': '2',
+             'jessie': '3',
+             'stretch': '4',
+             'buster': '5',
+             'bullseye': '6',
+             'lenny': '7',
+             'squeeze': '8',
+             'wheezy': '9'}
+versions = {'hardware': '1', 'iso': '2'}
 
 # generate UID (mostly random bytes)
 uid_quad1 = ''.join(random.choice('0123456789abcdef') for i in range(4))

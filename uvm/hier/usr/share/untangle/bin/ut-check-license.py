@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 #
 # A simple utility to check the validity of a license
@@ -49,7 +49,7 @@ def checkLicense(app):
                 print("License found: Invalid")
                 return False;
 
-    except Exception, e:
+    except Exception as e:
         print("Exception:", e)
         return False;
 

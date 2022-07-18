@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 #
 # Script to get the status of all wireguard interfaces and return to
 # the caller as json object. We call 'wg show all dump' which gives us
@@ -78,11 +78,11 @@ def parse_output(parse_data):
 
 tunnel_status = {}
 
-tunnel_proc = subprocess.Popen("/usr/bin/wg show all dump", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+tunnel_proc = subprocess.Popen("/usr/bin/wg show all dump", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
 (tunnel_out,tunnel_err) = tunnel_proc.communicate()
 tunnel_raw = parse_output(tunnel_out)
 
 tunnel_status["wireguard"] = tunnel_raw
 
 tunnel_json = json.dumps(tunnel_status)
-print tunnel_json
+print(tunnel_json)

@@ -1,26 +1,26 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import getopt
 import sys
 
 if "@PREFIX@" != '':
-    sys.path.insert(0, '@PREFIX@/usr/lib/python2.7/dist-packages')
+    sys.path.insert(0, '@PREFIX@/usr/lib/python3/dist-packages')
 
 from uvm.settings_reader import get_uvm_settings_item
 from uvm.settings_reader import get_app_settings_item
 
 
 def usage():
-    print("""\
+    print(("""\
 usage: %s [options] uvm|app basename|app settings_name
 Options:
   -l | --lower                  lower case output
   -d | --default                default value if setting is None/null
-""" % sys.argv[0])
+""" % sys.argv[0]))
 
 try:
      opts, args = getopt.getopt(sys.argv[1:], "ld:", ['lower','default'])
-except getopt.GetoptError, err:
+except getopt.GetoptError as err:
      print(str(err))
      usage()
      sys.exit(2)
