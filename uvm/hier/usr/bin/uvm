@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import sys
 import os
 import resource
@@ -17,9 +17,9 @@ import platform
 PREFIX = "@PREFIX@"
 
 # read the configuration
-exec(open(PREFIX + "/usr/share/untangle/conf/untangle-vm.conf"));
+exec(open(PREFIX + "/usr/share/untangle/conf/untangle-vm.conf").read());
 
-#p = subprocess.Popen(['/usr/bin/logger','-t','uvmconsole'],stdin=subprocess.PIPE)
+#p = subprocess.Popen(['/usr/bin/logger','-t','uvmconsole'],stdin=subprocess.PIPE, text=True)
 #os.dup2(p.stdin.fileno(), sys.stdout.fileno())
 #os.dup2(p.stdin.fileno(), sys.stderr.fileno())
 
@@ -43,10 +43,10 @@ use_valgrind = False
 use_leakdetect = False
 
 def debug(string):
-    print string
+    print(string)
     sys.stdout.flush()
     syslog.syslog(string);
-    
+
 class ArgumentParser(object):
     def __init__(self):
         pass
@@ -71,8 +71,8 @@ class ArgumentParser(object):
             for opt in optlist:
                 handlers[opt[0]](opt[1])
             return args
-        except getopt.GetoptError, exc:
-            print exc
+        except getopt.GetoptError as exc:
+            print(exc)
             printUsage()
             exit(1)
 
@@ -95,8 +95,7 @@ parser.parse_args()
 def set_proc_name(newname):
     from ctypes import cdll, byref, create_string_buffer
     libc = cdll.LoadLibrary('libc.so.6')
-    buff = create_string_buffer(len(newname)+1)
-    buff.value = newname
+    buff = create_string_buffer(newname.encode('ascii'))
     libc.prctl(15, byref(buff), 0, 0, 0)
 
 
@@ -125,7 +124,7 @@ def cleanupTmpFiles():
 #
 def resetIptables():
     # debug("Resetting iptables rules..."
-    os.system(PREFIX + '/usr/share/untangle/bin/ut-uvm-update-rules.sh'); 
+    os.system(PREFIX + '/usr/share/untangle/bin/ut-uvm-update-rules.sh');
 
 #
 # Make special changes for the dev environment
@@ -184,8 +183,8 @@ def prepareSystem():
     procset('/proc/sys/net/netfilter/nf_conntrack_udp_timeout',"70",True);
     procset('/proc/sys/net/ipv4/tcp_synack_retries',"0",True);
     procset('/proc/sys/net/ipv4/tcp_syncookies',"1",True);
-    procset('/proc/sys/net/core/rmem_max','1048576',True); # needed for larger buffers for classd 
-    procset('/proc/sys/net/core/wmem_max','1048576',True); # needed for larger buffers for classd 
+    procset('/proc/sys/net/core/rmem_max','1048576',True); # needed for larger buffers for classd
+    procset('/proc/sys/net/core/wmem_max','1048576',True); # needed for larger buffers for classd
     procset('/proc/sys/net/ipv4/neigh/default/gc_thresh1','4096',True); # adjust max arp entry (bug #10327)
     procset('/proc/sys/net/ipv4/neigh/default/gc_thresh2','8192',True); # adjust max arp entry (bug #10327)
     procset('/proc/sys/net/ipv4/neigh/default/gc_thresh3','8192',True); # adjust max arp entry (bug #10327)
@@ -228,7 +227,7 @@ def prepareSystem():
 
     # must set lang to ensure proper handling of i18n characters in JSON serialization (bug #10609)
     os.environ['LANG'] = "en_US.UTF-8"
-    
+
     # build classpath
     os.environ['CLASSPATH'] = ""
     os.environ['CLASSPATH'] += PREFIX + "/usr/share/untangle/conf:" + PREFIX + "/usr/share/untangle/lib/untangle-libuvm-bootstrap/:"
@@ -241,7 +240,7 @@ def prepareSystem():
     # do not limit core size
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
-    # raise the FD limit, we do this incrementally so it automatically sets it 
+    # raise the FD limit, we do this incrementally so it automatically sets it
     # to some large accepted value
     fdlimit=1024
     for i in range(13):
@@ -270,7 +269,7 @@ def checkSystem():
 
     # check nfnetlink_queue is loaded
     if not os.path.exists("/proc/net/netfilter/nfnetlink_queue"):
-        debug("ERROR: Incompatible kernel detected (no nfnetlink)"); 
+        debug("ERROR: Incompatible kernel detected (no nfnetlink)");
         sys.exit(1);
 
     # check nfnetlink_queue owner
@@ -309,7 +308,7 @@ def procset(procfile, value, optional):
         if not optional:
             sys.exit(1);
 
-# 
+#
 # This function monitors the running UVM to make sure it is within operating specs
 # If it appears messed up it will kill it so the other thread will restart a functioning UVM
 #
@@ -318,8 +317,8 @@ def monitor_uvm(pid):
 
     while True:
         time.sleep(monitor_interval_seconds)
-        
-        if not os.path.exists("/proc/%i" % pid): 
+
+        if not os.path.exists("/proc/%i" % pid):
             debug("untangle-vm not found (pid: %i), monitoring stopped" % pid);
             return;
 
@@ -340,14 +339,14 @@ def monitor_uvm(pid):
                 # proc is still alive
                 debug("*** Killing -9 untangle-vm(%i)." % pid);
                 os.system("kill -9 %i" % pid);
-                
+
     return;
 
 # Return True if we need to kill the UVM
 # this happens when the UVM is "out-of-spec" and it is determined that killing it
 # and letting it restart is better than continuing in the current state
-def needToRestart(pid): 
-    
+def needToRestart(pid):
+
     # If the untangle-vm is having frequent CMF GC failures, kill it
     p = os.popen('tail -100 %s | grep -ci "concurrent mode failure"' % uvm_gc_log);
     output = p.readline().rstrip();
@@ -382,7 +381,7 @@ def needToRestart(pid):
     return False;
 
 #
-# SIGINT handler 
+# SIGINT handler
 # Sets the cleanup flag and sends the signal to the untangle-vm
 #
 def sigINThandler(signal, frame):
@@ -394,7 +393,7 @@ def sigINThandler(signal, frame):
         os.system("pkill -%s -f com.untangle.uvm.Main" % str(signal));
 
 #
-# SIGTERM handler 
+# SIGTERM handler
 # Sets the cleanup flag and sends the signal to the untangle-vm
 #
 def sigTERMhandler(signal, frame):
@@ -406,7 +405,7 @@ def sigTERMhandler(signal, frame):
         os.system("pkill -%s -f com.untangle.uvm.Main" % str(signal));
 
 #
-# SIGARB handler 
+# SIGARB handler
 # Sets the cleanup flag and sends the signal to the untangle-vm
 #
 def sigABRThandler(signal, frame):
@@ -461,8 +460,8 @@ while True:
         #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
         #os.dup2(so.fileno(), sys.stdout.fileno())
         #os.dup2(se.fileno(), sys.stderr.fileno())
-        
-        p = subprocess.Popen(['/usr/bin/logger','-t','uvmconsole'],stdin=subprocess.PIPE)
+
+        p = subprocess.Popen(['/usr/bin/logger','-t','uvmconsole'],stdin=subprocess.PIPE, text=True)
         os.dup2(p.stdin.fileno(), sys.stdout.fileno())
         os.dup2(p.stdin.fileno(), sys.stderr.fileno())
 
@@ -487,9 +486,9 @@ while True:
 
         debug("ERROR: execv returned");
         #never returns;
-    
+
     # parent
-    uvm_pid = pid;        
+    uvm_pid = pid;
     debug("untangle-vm launched (pid: %i)" % uvm_pid);
 
     # write the java pid file
@@ -515,10 +514,10 @@ while True:
             exit_code = (result & 0xff00) >> 8
 
             break;
-        except OSError,e :
+        except OSError as e :
             # If its EINTR (interrupted), dont print error
             if not (e.errno == 4):
-                debug(e); 
+                debug(e);
                 time.sleep(1);
 
             continue; #ignore interrupted
@@ -541,9 +540,9 @@ while True:
         if developmentEnv:
             devEnvRestoreSystem()
         sys.exit(0);
-    
+
     debug("*** untangle-vm unexpectedly exited ( exit code:%i exit signal:%i )" % (exit_code, exit_sig));
-    
+
     resetIptables();
     flushConntrack();
 
@@ -553,7 +552,7 @@ while True:
     os.system("cp -fa %s.crash.1 %s.crash.2 2>/dev/null" % (uvm_console_log, uvm_console_log));
     os.system("cp -fa %s.crash   %s.crash.1 2>/dev/null" % (uvm_console_log, uvm_console_log));
     os.system("cp -fa %s         %s.crash   2>/dev/null" % (uvm_console_log, uvm_console_log));
-    os.system("echo >| %s" % uvm_console_log) # nuke the console.log 
+    os.system("echo >| %s" % uvm_console_log) # nuke the console.log
     os.system("cp -fa %s.crash.1 %s.crash.2 2>/dev/null" % (uvm_uvm_log, uvm_uvm_log));
     os.system("cp -fa %s.crash   %s.crash.1 2>/dev/null" % (uvm_uvm_log, uvm_uvm_log));
     os.system("cp -fa %s         %s.crash   2>/dev/null" % (uvm_uvm_log, uvm_uvm_log));
@@ -563,7 +562,7 @@ while True:
     os.system("cp -fa %s.crash.1 %s.crash.2 2>/dev/null" % (uvm_packages_log, uvm_packages_log));
     os.system("cp -fa %s.crash   %s.crash.1 2>/dev/null" % (uvm_packages_log, uvm_packages_log));
     os.system("dpkg -l 'untangle*' >| %s.crash" % (uvm_packages_log));
-    
+
     # if the untangle-vm returns in the dev env, don't bother restarting it
     if developmentEnv:
         debug("*** Development environment: not restarting untangle-vm");
@@ -572,5 +571,5 @@ while True:
 
     # we sleep here to allow the system to recover from unexpected crashes
     # This will allow the kernel time to close sockets so they will be available when the UVM restarts
-    time.sleep(30); 
+    time.sleep(30);
     # end while loop

@@ -1,22 +1,20 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Text-based user inteface for configuring a subset of critcal items neccessary
 to connect with browser (for complete configuration)
 """
 import base64
 import getopt
-import json
-import md5
+import hashlib
 import os
 import re
 import signal
 import sys
-import subprocess
 import traceback
 import crypt
 
 if "@PREFIX@" != '':
-    sys.path.insert(0, '@PREFIX@/usr/lib/python2.7/dist-packages')
+    sys.path.insert(0, '@PREFIX@/usr/lib/python3/dist-packages')
 
 import curses
 import curses.textpad
@@ -31,7 +29,7 @@ from jsonrpc import JSONDecodeException
 import uvm
 
 Debug = False
-AppTitle = "Untangle Next Generation Firewall Configuration Console"
+AppTitle = "Next Generation Firewall Configuration Console"
 Require_Auth = True
 
 class UvmContext:
@@ -54,7 +52,7 @@ class UvmContext:
             if tries == 0:
                 break
             else:
-                print("Connecting to Untangle...")
+                print("Connecting to NGFW...")
             sleep(wait)
         raise
 
@@ -253,9 +251,9 @@ class Screen(object):
     def key_process(self):
         """
         Handle keystrokes
-        
+
         If Enter, advance the current mode (if multiple modes exist)
-        If Esc, decriment current mode.  
+        If Esc, decrement current mode.
             If this is the starting mode, return False to exit process loop
         """
         if self.key in [curses.KEY_ENTER, ord('\n')]:
@@ -336,6 +334,7 @@ class Menu(Screen):
     """
     Menu class
     """
+    settings_changed = False
     menu_pos = 0
 
     def __init__(self, items, stdscreen):
@@ -352,25 +351,30 @@ class Menu(Screen):
             if "text" in item:
                 self.visible_items.append(item)
 
+        self.update_settings()
+
+    def update_settings(self):
         """
-        Get IP address of first interface that is not WAN to display recommended URL
+        Update settings for display
         """
         uvm = UvmContext()
         self.networkSettings = uvm.context.networkManager().getNetworkSettings()
         self.interfaceStatus = uvm.context.networkManager().getInterfaceStatus()
         self.deviceStatus = uvm.context.networkManager().getDeviceStatus()
-        self.interfaces = filter( lambda i: i['isVlanInterface'] is False, self.networkSettings["interfaces"]["list"] )
+        self.interfaces = [i for i in self.networkSettings["interfaces"]["list"] if i['isVlanInterface'] is False]
         uvm = None
 
         for interface in self.interfaces:
-            for device in self.deviceStatus["list"]:
-                if interface["physicalDev"] == device["deviceName"]:
-                    for k,v in device.iteritems():
-                        interface[k] = v
-            for interfaceStatus in self.interfaceStatus["list"]:
-                if interface["interfaceId"] == interfaceStatus["interfaceId"]:
-                    for k,v in interfaceStatus.iteritems():
-                        interface[k] = v
+            if self.deviceStatus is not None:
+                for device in self.deviceStatus["list"]:
+                    if interface["physicalDev"] == device["deviceName"]:
+                        for k,v in list(device.items()):
+                            interface[k] = v
+            if self.interfaceStatus is not None:
+                for interfaceStatus in self.interfaceStatus["list"]:
+                    if interface["interfaceId"] == interfaceStatus["interfaceId"]:
+                        for k,v in list(interfaceStatus.items()):
+                            interface[k] = v
 
         self.internal_ip_address = None
         for interface in self.interfaces:
@@ -398,6 +402,10 @@ class Menu(Screen):
         """
         super(Menu, self).display()
 
+        if Menu.settings_changed is True:
+            self.update_settings()
+            Menu.settings_changed = False
+
         for index, item in enumerate(self.visible_items):
             if index == self.menu_pos:
                 mode = curses.A_REVERSE
@@ -413,7 +421,7 @@ class Menu(Screen):
         # Footer
         height, width = self.stdscreen.getmaxyx()
         self.y_pos = height - 3
-        self.message( "Console is only for initial network configuration")
+        self.message( "This console is only for limited network configuration")
         self.message( "For full configuration browse to https://%s" % (self.internal_ip_address) )
 
     def navigate(self, n):
@@ -499,7 +507,7 @@ class Form(Screen):
         key = self.window.getch()
 
     def display(self):
-        """ 
+        """
         Display
         """
         super(Form, self).display()
@@ -546,7 +554,7 @@ class Form(Screen):
             else:
                 mode = curses.A_NORMAL
 
-            msg = '%-12s' % (item["text"]) 
+            msg = '%-12s' % (item["text"])
             self.window.addstr( self.y_pos + index, self.x_pos, item["text"], mode)
 
         self.y_pos += len(self.confirm_selections) + 1
@@ -625,13 +633,13 @@ class RemapInterfaces(Form):
         self.networkSettings = uvm.context.networkManager().getNetworkSettings()
         self.interfaceStatus = uvm.context.networkManager().getInterfaceStatus()
         self.deviceStatus = uvm.context.networkManager().getDeviceStatus()
-        self.interface_selections = filter( lambda i: i['isVlanInterface'] is False, self.networkSettings["interfaces"]["list"] )
+        self.interface_selections = [i for i in self.networkSettings["interfaces"]["list"] if i['isVlanInterface'] is False]
         uvm = None
 
         for interface in self.interface_selections:
             for device in self.deviceStatus["list"]:
                 if interface["physicalDev"] == device["deviceName"]:
-                    for k,v in device.iteritems():
+                    for k,v in list(device.items()):
                         interface[k] = v
 
     def display_interface(self, show_selected_only=False):
@@ -648,7 +656,7 @@ class RemapInterfaces(Form):
                 if self.selected_device is not None:
                     if ( interface["deviceName"] == self.selected_device ):
                         select_mode = curses.A_REVERSE
-                    else:    
+                    else:
                         select_mode = curses.A_NORMAL
                 else:
                     if index == self.mode_menu_pos[self.current_mode]:
@@ -749,6 +757,7 @@ class RemapInterfaces(Form):
         self.window.refresh()
         self.current_mode = None
         uvm.context.networkManager().setNetworkSettings(networkSettings)
+        Menu.settings_changed = True
         uvm = None
         return False
 
@@ -763,20 +772,20 @@ class AssignInterfaces(Form):
     modes_disabled = ['interface', 'config', 'confirm']
 
     config_selections = [{
-        "text": "Addressed", 
+        "text": "Addressed",
         "value": "ADDRESSED",
     },{
-        "text": "Bridged", 
+        "text": "Bridged",
         "value": "BRIDGED",
     },{
-        "text": "Disabled", 
+        "text": "Disabled",
         "value": "DISABLED",
     }]
 
     bridged_selections = []
 
     addressed_wan_selections = [{
-        "text": "DHCP", 
+        "text": "DHCP",
         "value": "DHCP"
     },{
         "text": "Static",
@@ -851,6 +860,14 @@ class AssignInterfaces(Form):
         "text": "Netmask",
         "key": "v4StaticPrefix",
         "validators": ["empty", "prefix"]
+    },{
+        "text": "DHCP Range Start Address",
+        "key": "dhcpRangeStart",
+        "validators": ["empty", "ip"]
+    },{
+        "text": "DHCP Range End Address",
+        "key": "dhcpRangeEnd",
+        "validators": ["empty", "ip"]
     }]
 
     # primary/secondary only if use peer dns =false
@@ -891,17 +908,17 @@ class AssignInterfaces(Form):
         self.networkSettings = uvm.context.networkManager().getNetworkSettings()
         self.interfaceStatus = uvm.context.networkManager().getInterfaceStatus()
         self.deviceStatus = uvm.context.networkManager().getDeviceStatus()
-        self.interface_selections = filter( lambda i: i['isVlanInterface'] is False, self.networkSettings["interfaces"]["list"] )
+        self.interface_selections = [i for i in self.networkSettings["interfaces"]["list"] if i['isVlanInterface'] is False]
         uvm = None
-        
+
         for interface in self.interface_selections:
             for device in self.deviceStatus["list"]:
                 if interface["physicalDev"] == device["deviceName"]:
-                    for k,v in device.iteritems():
+                    for k,v in list(device.items()):
                         interface[k] = v
             for interfaceStatus in self.interfaceStatus["list"]:
                 if interface["interfaceId"] == interfaceStatus["interfaceId"]:
-                    for k,v in interfaceStatus.iteritems():
+                    for k,v in list(interfaceStatus.items()):
                         interface[k] = v
 
         self.modes = self.modes_addressed
@@ -954,7 +971,7 @@ class AssignInterfaces(Form):
             config = interface["configType"]
             for c in self.config_selections:
                 if c["value"] == config:
-                    config = c["text"] 
+                    config = c["text"]
 
             addressed = ""
             address = ''
@@ -975,7 +992,7 @@ class AssignInterfaces(Form):
 
             msg = '%-12s %-17s %-5s  %-10s %-10s %-18s' % (str(interface["connected"]), interface["name"], interface["isWan"], config, addressed, address,  )
             if show_selected_only is True:
-                index = 0            
+                index = 0
             self.window.addstr( self.y_pos + index, self.x_pos, msg, select_mode)
 
         self.y_pos = self.y_pos + 1
@@ -999,15 +1016,15 @@ class AssignInterfaces(Form):
                 if item != self.mode_selected_item['config']:
                     continue
                 mode = curses.A_NORMAL
-            else: 
+            else:
                 if index == self.mode_menu_pos[self.current_mode]:
                     mode = curses.A_REVERSE
                 else:
                     mode = curses.A_NORMAL
 
-            msg = '%-12s' % (item["text"]) 
+            msg = '%-12s' % (item["text"])
             if show_selected_only is True:
-                index = 0            
+                index = 0
             self.window.addstr( self.y_pos + index, self.x_pos, msg, mode)
 
         self.y_pos += 1
@@ -1034,7 +1051,7 @@ class AssignInterfaces(Form):
                 if item != self.mode_selected_item['addressed']:
                     continue
                 mode = curses.A_NORMAL
-            else: 
+            else:
                 if index == self.mode_menu_pos[self.current_mode]:
                     mode = curses.A_REVERSE
                 else:
@@ -1043,9 +1060,9 @@ class AssignInterfaces(Form):
             if show_selected_only is True:
                 index = 0
 
-            msg = '%-20s' % (item["text"]) 
+            msg = '%-20s' % (item["text"])
             if show_selected_only is True:
-                index = 0            
+                index = 0
             self.window.addstr( self.y_pos + index, self.x_pos, msg, mode)
 
         self.y_pos += 1
@@ -1099,10 +1116,10 @@ class AssignInterfaces(Form):
 
     def display_edit(self,show_selected_only = False):
         """
-        Display address field edit 
+        Display address field edit
         """
         self.display_addressed(show_selected_only=True)
-    
+
         if "edit" not in self.mode_items:
             return
 
@@ -1126,7 +1143,7 @@ class AssignInterfaces(Form):
             if value is None:
                 value = ""
 
-            msg = '%-30s %-40s' % (item["text"], value) 
+            msg = '%-30s %-40s' % (item["text"], value)
             self.window.addstr( self.y_pos + index, self.x_pos, msg, mode)
 
         self.y_pos = self.y_pos + len(self.mode_items["edit"])
@@ -1136,6 +1153,19 @@ class AssignInterfaces(Form):
             self.message( "Press [Enter] to confirm")
             self.message( "Press [Esc] to change addressed mode")
 
+    def textbox_validator( self, ch):
+        """
+        Validator to properly capture backspace key
+        """
+        if ch == 27:
+            self.textbox_cancel = True
+            return 10
+        elif ch == 127:
+            self.textboxValue = self.current_textbox.gather().strip().lower()[:-1]
+            return 8
+        else:
+            return ch
+
     def edit_field(self, edit_index, edit_item):
         """
         Edit the specified field with a textbox.
@@ -1143,21 +1173,24 @@ class AssignInterfaces(Form):
         value = self.mode_selected_item['interface'][edit_item["key"]]
         if value is None:
             value = ""
-        textbox = self.textbox( edit_index, 31, str(value) )
-        newValue = textbox.edit()
+        self.textbox_cancel = False
+        self.current_textbox = self.textbox( edit_index, 31, str(value) )
+        self.textboxValue = self.current_textbox.edit(self.textbox_validator)
+        if self.textbox_cancel is True:
+            self.textboxValue = value
 
         invalid_messages = None
         if "validators" in edit_item:
-            invalid_messages = Validator.check(newValue, edit_item["validators"] )
+            invalid_messages = Validator.check(self.textboxValue, edit_item["validators"] )
 
-        if  ( "allow_empty" in edit_item ) and ( edit_item["allow_empty"] is True ) and ( len(newValue.strip()) == 0 ):
+        if  ( "allow_empty" in edit_item ) and ( edit_item["allow_empty"] is True ) and ( len(self.textboxValue.strip()) == 0 ):
             invalid_messages = None
 
         if invalid_messages is not None:
             self.invalid_messages(invalid_messages)
         else:
-            if newValue != value:
-                self.mode_selected_item['interface'][edit_item["key"]] = newValue.strip()
+            if self.textboxValue != value:
+                self.mode_selected_item['interface'][edit_item["key"]] = self.textboxValue.strip()
             self.key = 27
 
     def action_interface(self):
@@ -1238,6 +1271,7 @@ class AssignInterfaces(Form):
         self.current_mode = None
         try:
             uvm.context.networkManager().setNetworkSettings(networkSettings)
+            Menu.settings_changed = True
         except:
             pass
         uvm = None
@@ -1260,7 +1294,7 @@ class Ping(Screen):
         except:
             pass
 
-        address = self.window.getstr(self.y_pos -1, 31, 50)
+        address = self.window.getstr(self.y_pos -1, 31, 50).decode('utf-8')
 
         try:
             curses.curs_set(0)
@@ -1341,6 +1375,7 @@ class RemoteSupport(Form):
         system_settings = uvm.context.systemManager().getSettings()
         system_settings["supportEnabled"] = self.mode_selected_item["configure"]["value"]
         system_settings = uvm.context.systemManager().setSettings(system_settings)
+        Menu.settings_changed = True
         uvm = None
         return False
 
@@ -1477,7 +1512,7 @@ class FactoryDefaults(Form):
         except:
             pass
         uvm = None
-        print("Connecting to Untangle...")
+        print("Connecting to NGFW...")
         sleep(30)
 
 class suspend_curses():
@@ -1524,7 +1559,7 @@ class Login(Screen):
             pass
 
         curses.noecho()
-        password = self.window.getstr(self.y_pos -1, len(label), 50)
+        password = self.window.getstr(self.y_pos -1, len(label), 50).decode('utf-8')
 
         try:
             curses.curs_set(0)
@@ -1549,7 +1584,8 @@ class Login(Screen):
                     pw_hash = base64.b64decode(pw_hash_base64)
                     raw_pw = pw_hash[0:len(pw_hash) - 8]
                     salt = pw_hash[len(pw_hash) - 8:]
-                    if raw_pw == md5.new(password.strip() + salt).digest():
+                    b = password + salt
+                    if raw_pw == hashlib.md5(b.encode('utf-8')).hexdigest():
                         self.authorized = True
                         self.process_continue = False
                     else:
@@ -1638,7 +1674,7 @@ def handle_exceptions(tb):
         print("\n   Line: {0}\n Method: {1}\nCommand: {2}".format(traceback_args[1], traceback_args[2], traceback_args[3]))
         count += 1
     print("\n")
-    raw_input("Press [Enter] key to continue...")
+    eval(input("Press [Enter] key to continue..."))
 
 def main(argv):
     global Debug
@@ -1668,7 +1704,7 @@ def main(argv):
         uvm = UvmContext(tries=30)
         uvm = None
     except:
-        print("Untangle is unavailable at this time")
+        print("NGFW is unavailable at this time")
         sys.exit(1)
 
     curses.wrapper(UiApp)

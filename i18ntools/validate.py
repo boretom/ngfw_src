@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Rebuild gettext template file (.pot) and 
 synchronize with existing po files
@@ -12,13 +12,14 @@ import sys
 import re
 
 from subprocess import call
+import importlib
 
 UNTANGLE_DIR = '%s/lib/python' % (os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, UNTANGLE_DIR)
 
 import i18n
 
-reload(sys)  
+importlib.reload(sys)  
 sys.setdefaultencoding('utf8')
 
 ngfw = i18n.Ngfw()

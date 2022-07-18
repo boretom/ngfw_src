@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 
 import subprocess
 import sys
@@ -9,7 +9,7 @@ import traceback
 dict = {}
 
 # read the report entries and put in dictionary
-p = subprocess.Popen(["sh","-c","/usr/bin/find /usr/share/untangle/lib -path '*/reports/*.json' -print"], stdout=subprocess.PIPE)
+p = subprocess.Popen(["sh","-c","/usr/bin/find /usr/share/untangle/lib -path '*/reports/*.json' -print"], stdout=subprocess.PIPE, text=True)
 for line in iter(p.stdout.readline, ''):
     if 'appProperties.json' in line: continue
     filename = line.strip()
@@ -23,7 +23,7 @@ for line in iter(p.stdout.readline, ''):
             dict[category] = []
         dict[category].append(json_obj)
 
-    except Exception, e:
+    except Exception as e:
         print("Exception: %s" % filename, e)
         traceback.print_exc(e)
         sys.exit(1)

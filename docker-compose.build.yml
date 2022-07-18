@@ -17,9 +17,9 @@ services:
         git checkout $${PKGTOOLS_COMMIT} || true"
 
     build:
-      image: untangleinc/ngfw:${REPOSITORY:-buster}-build-multiarch
+      image: untangleinc/ngfw:${REPOSITORY:-bullseye}-build-multiarch
       environment:
-        REPOSITORY: ${REPOSITORY:-buster}
+        REPOSITORY: ${REPOSITORY:-bullseye}
         DISTRIBUTION: ${DISTRIBUTION} # defaults to empty: let pkgtools do the right thing
         ARCHITECTURE: ${ARCHITECTURE} # defaults to empty: build.sh will use host arch
         VERBOSE: ${VERBOSE} # defaults to empty: "not verbose"
@@ -40,7 +40,7 @@ services:
       privileged: ${PRIVILEGED:-false}
       extra_hosts:
         # from the outside, pass package-server's outside IP instead
-        - "package-server:${PACKAGE_SERVER_IP:-10.112.12.87}"
+        - "package-server:${PACKAGE_SERVER_IP:-52.2.228.218}"
       volumes:
         - .:/opt/untangle/build
         - pkgtools:/opt/untangle/ngfw_pkgtools:ro

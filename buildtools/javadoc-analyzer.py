@@ -1,12 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-import copy
 import getopt
 import javalang
 import os
-import re
 import sys
-import time
 
 from timeit import default_timer as time
 
@@ -15,6 +12,7 @@ Type_name = None
 Validators = {}
 Show_valid = False
 Start_time = time()
+
 
 class JavaParser:
     def __init__(self, file_path):

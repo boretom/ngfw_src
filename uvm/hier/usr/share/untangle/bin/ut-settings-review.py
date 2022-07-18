@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import getopt
 import sys
@@ -6,15 +6,15 @@ import subprocess
 import re
 
 def usage():
-    print("""\
+    print(("""\
 usage: %s filename
 example: %s network.js reviews network.js changes
-""" % (sys.argv[0], sys.argv[0]) )
+""" % (sys.argv[0], sys.argv[0]) ))
     sys.exit(1)
 
 try:
      opts, args = getopt.getopt(sys.argv[1:], "", [])
-except getopt.GetoptError, err:
+except getopt.GetoptError as err:
      print(str(err))
      usage()
      sys.exit(2)
@@ -29,7 +29,7 @@ if prefix == "@PREFIX@": prefix = "" # for running in src
 prev = None
 
 cmd = "/usr/bin/find %s/usr/share/untangle/settings/ -type f -name '%s*' | xargs ls -1tr " % (prefix, filename)
-lines = subprocess.Popen(["/bin/bash","-c",cmd], stdout=subprocess.PIPE).communicate()[0].split('\n')
+lines = subprocess.Popen(["/bin/bash","-c",cmd], stdout=subprocess.PIPE, text=True).communicate()[0].split('\n')
 
 print("There are %i changes:" % (len(lines)-2) )
 print("\n")
@@ -37,7 +37,7 @@ for file in lines:
     print(file)
 print("\n")
 
-raw_input("Press Enter to review 1st change...")
+eval(input("Press Enter to review 1st change..."))
 
 for file in lines:
     if file == None or file.strip() == "":
@@ -63,6 +63,6 @@ for file in lines:
     os.system("diff -urN %s %s" % (prev, file))
 
     print("\n\n")
-    raw_input("Press Enter to continue...")
+    eval(input("Press Enter to continue..."))
 
     prev = file
